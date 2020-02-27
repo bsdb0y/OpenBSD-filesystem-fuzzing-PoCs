@@ -1,0 +1,158 @@
+openbsd# vnconfig check/ufs.1.img                                              
+vnd0
+openbsd# mount /dev/vnd0c /mnt/check_mt/                                       
+openbsd# perl -e 'print "A" x 200'  > /mnt/check_mt/                           
+ksh: cannot create /mnt/check_mt/: Is a directory
+openbsd# perl -e 'print "A" x 200'  > /mnt/check_mt/test
+uvm_fault(0xffffffff81f627d8, 0xffff80002a96f0ae, 0, 1) -> e
+kernel: page fault trap, code=0                             
+Stopped at      skpc+0x13:      repe scasb      (%rsi)
+ddb> trace                                            
+skpc() at skpc+0x13
+ffs_inode_alloc(fffffd806aaf9d30,81a4,fffffd807f78f540,ffff8000211b3678) at ffs
+_inode_alloc+0x182                                                             
+ufs_makeinode(81a4,fffffd8058ab11b8,ffff8000211b3970,ffff8000211b39c0) at ufs_m
+akeinode+0x7f                                                                  
+ufs_create(ffff8000211b3720) at ufs_create+0x3c
+VOP_CREATE(fffffd8058ab11b8,ffff8000211b3970,ffff8000211b39c0,ffff8000211b3780)
+ at VOP_CREATE+0x4a                                                            
+vn_open(ffff8000211b3940,602,1a4) at vn_open+0x182
+doopenat(ffff8000211084f8,ffffff9c,578f72db150,601,1b6,ffff8000211b3b40) at doo
+penat+0x1c0                                                                    
+syscall(ffff8000211b3bb0) at syscall+0x315
+Xsyscall() at Xsyscall+0x128              
+end of kernel               
+end trace frame: 0x7f7fffff42c0, count: -9
+ddb> show panic                           
+kernel page fault
+uvm_fault(0xffffffff81f627d8, 0xffff80002a96f0ae, 0, 1) -> e
+skpc() at skpc+0x13                                         
+end trace frame: 0xffff8000211b3550, count: 0
+ddb> show bcstats                            
+Current Buffer Cache status:
+numbufs 25160 busymapped 1, delwri 4
+kvaslots 6293 avail kva slots 6292  
+bufpages 100625, dmapages 100625, dirtypages 16
+pendingreads 0, pendingwrites 0                
+highflips 0, highflops 0, dmaflips 0
+ddb>                                
+ddb> show moun                   
+flags cccc03eb<RDONLY,SYNCHRONOUS,NOSUID,NOPERM,ASYNC,EXRDONLY,EXPORTED,DEFEXPO
+RTED>                                                                          
+vnodecovered 0x53415757e5894855 syncer 0x8348544156415741 data 0x84894300000390
+a6                                                                             
+kernel: protection fault trap, code=0
+Faulted in DDB; continuing...        
+ddb> ps                      
+   PID     TID   PPID    UID  S       FLAGS  WAIT          COMMAND
+*46202  296394      1      0  7    0x100003                ksh    
+ 67712  482837      1      0  3    0x100098  poll          cron
+ 76004  456155      1    110  3    0x100090  poll          sndiod
+ 22668  407858  74441     95  3    0x100092  kqread        smtpd 
+ 16871  169885  74441    103  3    0x100092  kqread        smtpd
+  5724  143523  74441     95  3    0x100092  kqread        smtpd
+ 27394  163542  74441     95  3    0x100092  kqread        smtpd
+ 20484  384744  74441     95  3    0x100092  kqread        smtpd
+ 64548  297509  74441     95  3    0x100092  kqread        smtpd
+ 67601  107163      1     99  3    0x100090  poll          sndiod
+ 74441  297582      1      0  3    0x100080  kqread        smtpd 
+ 20156  506499      1      0  3        0x80  select        sshd 
+ 45105  235454      1      0  3    0x100080  poll          ntpd
+ 78288  383964  27955     83  3    0x100092  poll          ntpd
+ 27955  226682      1     83  3    0x100092  poll          ntpd
+ 99906    6529  43707     74  3    0x100092  bpf           pflogd
+ 43707  105479      1      0  3        0x80  netio         pflogd
+ 89718  142345  44424     73  3    0x100090  kqread        syslogd
+ 44424  521804      1      0  3    0x100082  netio         syslogd
+ 30998  455426      1     77  3    0x100090  poll          dhclient
+ 89764  243029      1      0  3        0x80  poll          dhclient
+ 35138    8326  70422    115  3    0x100092  kqread        slaacd  
+ 23032  318660  70422    115  3    0x100092  kqread        slaacd
+ 70422  320175      1      0  3    0x100080  kqread        slaacd
+ 39151   15918      0      0  3     0x14200  bored         smr   
+ 10834  319655      0      0  3     0x14200  pgzero        zerothread
+ 84091  111517      0      0  3     0x14200  aiodoned      aiodoned  
+  6129   12187      0      0  3     0x14200  syncer        update  
+ 29143  101856      0      0  3     0x14200  cleaner       cleaner
+ 14491  398040      0      0  3     0x14200  reaper        reaper 
+ 64783  333917      0      0  3     0x14200  pgdaemon      pagedaemon
+ 68449  385931      0      0  3     0x14200  bored         crynlk    
+ 22425  209697      0      0  3     0x14200  bored         crypto
+ 15726   36703      0      0  3     0x14200  bored         softnet
+ 67144  285697      0      0  3     0x14200  bored         systqmp
+ 60515  352700      0      0  3     0x14200  bored         systq  
+  6009  442694      0      0  3  0x40014200  bored         softclock
+ 84632  438157      0      0  3  0x40014200                idle0    
+     1   14648      0      0  3        0x82  wait          init 
+     0       0     -1      0  3     0x10200  scheduler     swapper
+ddb> show registers                                               
+rdi               0xffff80002a96f0ae
+rsi               0xfffffffff3e00021
+rbp               0xffff8000211b34c0
+rbx                       0xf3e00021
+rdx               0xffff80002a96f0ae
+rcx               0xfffffffff3e00021
+rax                             0xff
+r8                0xffffffff81fb4570    cleancache
+r9                                 0              
+r10               0xea6b18935af585da
+r11               0x8100ddb3d86dd550
+r12                        0xc200000    __kernel_phys_end+0xa200000
+r13                              0x3                               
+r14               0xffff800000423800
+r15               0xffff80001e76f004
+rip               0xffffffff81164843    skpc+0x13
+cs                               0x8             
+rflags                       0x10282    __ALIGN_SIZE+0xf282
+rsp               0xffff8000211b3428                       
+ss                              0x10
+skpc+0x13:      repe scasb      (%rsi)
+
+openbsd# dmesg
+OpenBSD 6.6-current (GENERIC) #12: Wed Feb 26 12:56:24 MST 2020
+    deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
+real mem = 2130698240 (2031MB)
+avail mem = 2053689344 (1958MB)
+mpath0 at root
+scsibus0 at mpath0: 256 targets
+mainbus0 at root
+bios0 at mainbus0: SMBIOS rev. 2.4 @ 0xf3f40 (10 entries)
+bios0: vendor SeaBIOS version "1.11.0p2-OpenBSD-vmm" date 01/01/2011
+bios0: OpenBSD VMM
+acpi at bios0 not configured
+cpu0 at mainbus0: (uniprocessor)
+cpu0: Intel(R) Core(TM) i7-7600U CPU @ 2.80GHz, 2904.88 MHz, 06-8e-09
+cpu0: FPU,VME,DE,PSE,TSC,MSR,PAE,CX8,SEP,PGE,CMOV,PAT,PSE36,CFLUSH,MMX,FXSR,SSE,SSE2,SSE3,PCLMUL,SSSE3,FMA3,CX16,SSE4.1,SSE4.2,MOVBE,POPCNT,AES,XSAVE,AVX,F16C,RDRAND,HV,NXE,PAGE1GB,LONG,LAHF,ABM,3DNOWP,ITSC,FSGSBASE,TSC_ADJUST,BMI1,AVX2,SMEP,BMI2,ERMS,RDSEED,ADX,SMAP,CLFLUSHOPT,MD_CLEAR,MELTDOWN
+cpu0: 256KB 64b/line 8-way L2 cache
+cpu0: smt 0, core 0, package 0
+cpu0: using VERW MDS workaround
+pvbus0 at mainbus0: OpenBSD
+pvclock0 at pvbus0
+pci0 at mainbus0 bus 0
+pchb0 at pci0 dev 0 function 0 "OpenBSD VMM Host" rev 0x00
+virtio0 at pci0 dev 1 function 0 "Qumranet Virtio RNG" rev 0x00
+viornd0 at virtio0
+virtio0: irq 3
+virtio1 at pci0 dev 2 function 0 "Qumranet Virtio Network" rev 0x00
+vio0 at virtio1: address fe:e1:bb:d1:f7:05
+virtio1: irq 5
+virtio2 at pci0 dev 3 function 0 "Qumranet Virtio Storage" rev 0x00
+vioblk0 at virtio2
+scsibus1 at vioblk0: 2 targets
+sd0 at scsibus1 targ 0 lun 0: <VirtIO, Block Device, >
+sd0: 51200MB, 512 bytes/sector, 104857600 sectors
+virtio2: irq 6
+virtio3 at pci0 dev 4 function 0 "OpenBSD VMM Control" rev 0x00
+vmmci0 at virtio3
+virtio3: irq 7
+isa0 at mainbus0
+isadma0 at isa0
+com0 at isa0 port 0x3f8/8 irq 4: ns8250, no fifo
+com0: console
+vscsi0 at root
+scsibus2 at vscsi0: 256 targets
+softraid0 at root
+scsibus3 at softraid0: 256 targets
+root on sd0a (c476a2cf4c17493c.a) swap on sd0b dump on sd0b
+WARNING: / was not properly unmounted
+openbsd# 

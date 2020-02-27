@@ -1,0 +1,4 @@
+1. vnconfig filesystem_image
+2. mount /dev/vnd0c /mnt/some_dir
+3. echo "A" > /mnt/some_dir/file
+4. Panic comes

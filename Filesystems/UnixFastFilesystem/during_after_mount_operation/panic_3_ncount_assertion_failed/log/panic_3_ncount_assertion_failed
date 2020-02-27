@@ -1,0 +1,201 @@
+openbsd# vnconfig check/ufs.1.img                                              
+vnd0
+openbsd# mount /dev/vnd0c /mnt/check_mt/                                       
+openbsd# touch /mnt/check_mt/check                                             
+panic: kernel diagnostic assertion "ncount <= bp->b_bufsize" failed: file "/usr/src/sys/kern/vfs_bio.c", line 1355
+Stopped at      db_enter+0x10:  popq    %rbp
+    TID    PID    UID     PRFLAGS     PFLAGS  CPU  COMMAND
+* 16473  23210      0    0x100003          0    0  touch  
+db_enter() at db_enter+0x10                             
+panic(ffffffff81c66b1d) at panic+0x128
+__assert(ffffffff81cba43d,ffffffff81c921dc,54b,ffffffff81c8c648) at __assert+0x
+2b                                                                             
+buf_adjcnt(fffffd8068d93348,b800) at buf_adjcnt+0x58
+ffs_bufatoff(fffffd8055ed2e20,0,0,ffff80002103f248) at ffs_bufatoff+0xd3
+ufs_lookup() at ufs_lookup+0x319                                        
+VOP_LOOKUP(fffffd8057632698,ffff80002103f4b0,ffff80002103f500) at VOP_LOOKUP+0x
+46                                                                             
+vfs_lookup(ffff80002103f480) at vfs_lookup+0x3ca
+namei(ffff80002103f480) at namei+0x3a5          
+sys_utimensat(ffff800021126290,ffff80002103f5c0,ffff80002103f620) at sys_utimen
+sat+0xe0                                                                       
+syscall(ffff80002103f690) at syscall+0x315
+Xsyscall() at Xsyscall+0x128              
+end of kernel               
+end trace frame: 0x7f7ffffe31b0, count: 3
+https://www.openbsd.org/ddb.html describes the minimum info required in bug
+reports.  Insufficient info makes it difficult to find and fix bugs.       
+ddb> trace                                                          
+db_enter() at db_enter+0x10
+panic(ffffffff81c66b1d) at panic+0x128
+__assert(ffffffff81cba43d,ffffffff81c921dc,54b,ffffffff81c8c648) at __assert+0x
+2b                                                                             
+buf_adjcnt(fffffd8068d93348,b800) at buf_adjcnt+0x58
+ffs_bufatoff(fffffd8055ed2e20,0,0,ffff80002103f248) at ffs_bufatoff+0xd3
+ufs_lookup() at ufs_lookup+0x319                                        
+VOP_LOOKUP(fffffd8057632698,ffff80002103f4b0,ffff80002103f500) at VOP_LOOKUP+0x
+46                                                                             
+vfs_lookup(ffff80002103f480) at vfs_lookup+0x3ca
+namei(ffff80002103f480) at namei+0x3a5          
+sys_utimensat(ffff800021126290,ffff80002103f5c0,ffff80002103f620) at sys_utimen
+sat+0xe0                                                                       
+syscall(ffff80002103f690) at syscall+0x315
+Xsyscall() at Xsyscall+0x128              
+end of kernel               
+end trace frame: 0x7f7ffffe31b0, count: -12
+ddb> show panic                            
+kernel diagnostic assertion "ncount <= bp->b_bufsize" failed: file "/usr/src/sy
+s/kern/vfs_bio.c", line 1355                                                   
+ddb>                        
+ddb> show uvm               
+Current UVM status:
+  pagesize=4096 (0x1000), pagemask=0xfff, pageshift=12
+  503461 VM pages: 5550 active, 75524 inactive, 0 wired, 313288 free (39061 zer
+o)                                                                             
+  min  10% (25) anon, 10% (25) vnode, 5% (12) vtext
+  freemin=16782, free-target=22376, inactive-target=0, wired-max=167820
+  faults=489751, traps=287860, intrs=84090, ctxswitch=13629 fpuswitch=0
+  softint=20430, syscalls=332946, kmapent=11                           
+  fault counts:                             
+    noram=0, noanon=0, noamap=0, pgwait=0, pgrele=0
+    ok relocks(total)=111605(111605), anget(retries)=261499(0), amapcopy=59468
+    neighbor anon/obj pg=3702/59726, gets(lock/unlock)=131729/111605          
+    cases: anon=252421, anoncow=9078, obj=127928, prcopy=3801, przero=96521
+  daemon and swap counts:                                                  
+    woke=0, revs=0, scans=0, obscans=0, anscans=0
+    busy=0, freed=0, reactivate=0, deactivate=0  
+    pageouts=0, pending=0, nswget=0            
+    nswapdev=1                     
+    swpages=522114, swpginuse=0, swpgonly=0 paging=0
+  kernel pointers:                                  
+    objs(kern)=0xffffffff81f3a470
+ddb> show mount                  
+flags 41554156<SYNCHRONOUS,NOEXEC,NODEV,ASYNC,EXPORTED,ROOTFS>
+vnodecovered 0x4640c6c748d78948 syncer 0xc900000004ba81da data 0x1174e4854d0043
+9a                                                                             
+kernel: protection fault trap, code=0
+Faulted in DDB; continuing...        
+ddb> show bcstats            
+Current Buffer Cache status:
+numbufs 25159 busymapped 1, delwri 2
+kvaslots 6293 avail kva slots 6292  
+bufpages 100624, dmapages 100624, dirtypages 8
+pendingreads 0, pendingwrites 0               
+highflips 0, highflops 0, dmaflips 0
+ddb>                           
+ddb> ps                             
+   PID     TID   PPID    UID  S       FLAGS  WAIT          COMMAND
+*23210   16473  36155      0  7    0x100003                touch  
+ 36155  240028      1      0  3    0x10008b  pause         ksh  
+ 90882  427787      1      0  3    0x100098  poll          cron
+ 71009  133598      1    110  3    0x100090  poll          sndiod
+ 60790  102080      1     99  3    0x100090  poll          sndiod
+ 74340  441420  67187     95  3    0x100092  kqread        smtpd 
+ 69980  306297  67187    103  3    0x100092  kqread        smtpd
+ 11902  262656  67187     95  3    0x100092  kqread        smtpd
+ 38171  122495  67187     95  3    0x100092  kqread        smtpd
+ 36031  282274  67187     95  3    0x100092  kqread        smtpd
+  6531   13879  67187     95  3    0x100092  kqread        smtpd
+ 67187  411139      1      0  3    0x100080  kqread        smtpd
+ 30103   14391      1      0  3        0x80  select        sshd 
+ 77861  475975      1      0  3    0x100080  poll          ntpd
+  3202  470886  43505     83  3    0x100092  poll          ntpd
+ 43505  325106      1     83  3    0x100092  poll          ntpd
+ 35793  449142  69981     74  3    0x100092  bpf           pflogd
+ 69981  520820      1      0  3        0x80  netio         pflogd
+ 34053  504757  36838     73  3    0x100090  kqread        syslogd
+ 36838  318668      1      0  3    0x100082  netio         syslogd
+ 69674  250828   2762    115  3    0x100092  kqread        slaacd 
+ 25348   94168   2762    115  3    0x100092  kqread        slaacd
+ 42220  461192      1     77  3    0x100090  poll          dhclient
+ 83275  351385      1      0  3        0x80  poll          dhclient
+  2762   97217      1      0  3    0x100080  kqread        slaacd  
+ 35258  246652      0      0  3     0x14200  bored         smr   
+ 42568  226578      0      0  2     0x14200                zerothread
+ 58883   54129      0      0  3     0x14200  aiodoned      aiodoned  
+ 29253   48652      0      0  3     0x14200  syncer        update  
+ 36283    3639      0      0  3     0x14200  cleaner       cleaner
+ 61482  238881      0      0  3     0x14200  reaper        reaper 
+ 41830  398374      0      0  3     0x14200  pgdaemon      pagedaemon
+ 24093   43303      0      0  3     0x14200  bored         crynlk    
+ 92441  381586      0      0  3     0x14200  bored         crypto
+ 47539  363833      0      0  3     0x14200  bored         softnet
+ 95205  507227      0      0  3     0x14200  bored         systqmp
+ 90908   85811      0      0  3     0x14200  bored         systq  
+ 31865  141832      0      0  3  0x40014200  bored         softclock
+ 75344  416727      0      0  3  0x40014200                idle0    
+     1  391844      0      0  3        0x82  wait          init 
+     0       0     -1      0  3     0x10200  scheduler     swapper
+ddb>                                                              
+ddb> show registers                                               
+rdi               0xffffffff81f20b60    kprintf_mutex
+rsi                              0x5                 
+rbp               0xffff80002103f090
+rbx               0xffff80002103f140
+rdx                            0x3fd
+rcx               0x7e000000000001f9
+rax                              0x1
+r8                0xffff80002103f050
+r9                0xffff80002103efb5
+r10               0x4448c6215da96ed2
+r11               0xe9edf73205f2dd50
+r12                     0x3000000008
+r13               0xffff80002103f0a0
+r14                            0x100
+r15               0xffffffff81c66b1d    cmd0646_9_tim_udma+0x21d7a
+rip               0xffffffff812e22d0    db_enter+0x10             
+cs                               0x8                 
+rflags                         0x286
+rsp               0xffff80002103f090
+ss                              0x10
+db_enter+0x10:  popq    %rbp        
+ddb>                        
+
+openbsd# dmesg                                                     
+OpenBSD 6.6-current (GENERIC) #12: Wed Feb 26 12:56:24 MST 2020
+    deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
+real mem = 2130698240 (2031MB)
+avail mem = 2053672960 (1958MB)
+mpath0 at root
+scsibus0 at mpath0: 256 targets
+mainbus0 at root
+bios0 at mainbus0: SMBIOS rev. 2.4 @ 0xf3f40 (10 entries)
+bios0: vendor SeaBIOS version "1.11.0p2-OpenBSD-vmm" date 01/01/2011
+bios0: OpenBSD VMM
+acpi at bios0 not configured
+cpu0 at mainbus0: (uniprocessor)
+cpu0: Intel(R) Core(TM) i7-7600U CPU @ 2.80GHz, 2904.66 MHz, 06-8e-09
+cpu0: FPU,VME,DE,PSE,TSC,MSR,PAE,CX8,SEP,PGE,CMOV,PAT,PSE36,CFLUSH,MMX,FXSR,SSE,SSE2,SSE3,PCLMUL,SSSE3,FMA3,CX16,SSE4.1,SSE4.2,MOVBE,POPCNT,AES,XSAVE,AVX,F16C,RDRAND,HV,NXE,PAGE1GB,LONG,LAHF,ABM,3DNOWP,ITSC,FSGSBASE,TSC_ADJUST,BMI1,AVX2,SMEP,BMI2,ERMS,RDSEED,ADX,SMAP,CLFLUSHOPT,MD_CLEAR,MELTDOWN
+cpu0: 256KB 64b/line 8-way L2 cache
+cpu0: smt 0, core 0, package 0
+cpu0: using VERW MDS workaround
+pvbus0 at mainbus0: OpenBSD
+pvclock0 at pvbus0
+pci0 at mainbus0 bus 0
+pchb0 at pci0 dev 0 function 0 "OpenBSD VMM Host" rev 0x00
+virtio0 at pci0 dev 1 function 0 "Qumranet Virtio RNG" rev 0x00
+viornd0 at virtio0
+virtio0: irq 3
+virtio1 at pci0 dev 2 function 0 "Qumranet Virtio Network" rev 0x00
+vio0 at virtio1: address fe:e1:bb:d1:f7:05
+virtio1: irq 5
+virtio2 at pci0 dev 3 function 0 "Qumranet Virtio Storage" rev 0x00
+vioblk0 at virtio2
+scsibus1 at vioblk0: 2 targets
+sd0 at scsibus1 targ 0 lun 0: <VirtIO, Block Device, >
+sd0: 51200MB, 512 bytes/sector, 104857600 sectors
+virtio2: irq 6
+virtio3 at pci0 dev 4 function 0 "OpenBSD VMM Control" rev 0x00
+vmmci0 at virtio3
+virtio3: irq 7
+isa0 at mainbus0
+isadma0 at isa0
+com0 at isa0 port 0x3f8/8 irq 4: ns8250, no fifo
+com0: console
+vscsi0 at root
+scsibus2 at vscsi0: 256 targets
+softraid0 at root
+scsibus3 at softraid0: 256 targets
+root on sd0a (c476a2cf4c17493c.a) swap on sd0b dump on sd0b
+WARNING: / was not properly unmounted
+

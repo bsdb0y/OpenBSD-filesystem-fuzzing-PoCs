@@ -1,0 +1,6 @@
+1. vnconfig filesyste_image
+2. mount /dev/vnd0c /mnt/some_dir
+3. write something large to new file, for example,
+`perl -e 'print "A" x 200' > /mnt/some_dir/test`
+
+4. Panic comes

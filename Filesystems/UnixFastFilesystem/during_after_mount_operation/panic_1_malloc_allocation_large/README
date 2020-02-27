@@ -1,0 +1,3 @@
+1. vnconfig filesystem_image
+2. mount /dev/vnd0c /mnt/some_dir_
+3. Panic comes
